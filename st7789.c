@@ -97,36 +97,32 @@
 // COLMOD Parameter
 #define ST7789_COLMOD_16_BPP 0x55  // 01010101 - 16-bit/pixel
 
-// 5x7 Font
-#define FONT_WIDTH  5  // Font width
-#define FONT_HEIGHT 7  // Font height
-
 static uint16_t _cursor_x                  = 0;
 static uint16_t _cursor_y                  = 0;      // Cursor position (x, y)
 static uint16_t _color                     = WHITE;  // Color
 static uint16_t _bg_color                  = BLACK;  // Background color
 static uint8_t  _buffer[ST7789_WIDTH << 1] = {0};    // DMA buffer, long enough to fill a row.
 
-/// \brief Initialize ST7789
+/// \brief Initialize SPI
 /// \details Configure SPI, DMA, and RESET/DC/CS lines.
 static void SPI_init(void)
 {
     // Enable GPIO Port C and SPI peripheral
     RCC->APB2PCENR |= RCC_APB2Periph_GPIOC | RCC_APB2Periph_SPI1;
 
-    // PC2 - RESET
-    GPIOC->CFGLR &= ~(0xf << (PIN_RESET << 2));
-    GPIOC->CFGLR |= (GPIO_CNF_OUT_PP | GPIO_Speed_50MHz) << (PIN_RESET << 2);
-
-    // PC3 - DC
-    GPIOC->CFGLR &= ~(0xf << (PIN_DC << 2));
-    GPIOC->CFGLR |= (GPIO_CNF_OUT_PP | GPIO_Speed_50MHz) << (PIN_DC << 2);
-
 #ifndef ST7789_NO_CS
-    // PC4 - CS
+    // PC2 - CS
     GPIOC->CFGLR &= ~(0xf << (PIN_CS << 2));
     GPIOC->CFGLR |= (GPIO_CNF_OUT_PP | GPIO_Speed_50MHz) << (PIN_CS << 2);
 #endif
+
+    // PC3 - RESET
+    GPIOC->CFGLR &= ~(0xf << (PIN_RESET << 2));
+    GPIOC->CFGLR |= (GPIO_CNF_OUT_PP | GPIO_Speed_50MHz) << (PIN_RESET << 2);
+
+    // PC4 - DC
+    GPIOC->CFGLR &= ~(0xf << (PIN_DC << 2));
+    GPIOC->CFGLR |= (GPIO_CNF_OUT_PP | GPIO_Speed_50MHz) << (PIN_DC << 2);
 
     // PC5 - SCLK
     GPIOC->CFGLR &= ~(0xf << (SPI_SCLK << 2));
@@ -233,6 +229,8 @@ void tft_init(void)
     SPI_init();
 
     // Reset display
+    // ____  10us  ___________
+    //     \______/
     RESET_HIGH();
     Delay_Ms(1);
     RESET_LOW();
@@ -424,7 +422,7 @@ void tft_print(const char* str)
     while (*str)
     {
         tft_print_char(*str++);
-        _cursor_x += FONT_WIDTH + 1;
+        _cursor_x += FONT_WIDTH + FONT_SPACING_HOR;
     }
 }
 
@@ -465,7 +463,7 @@ void tft_print_number(int32_t num, uint16_t width)
     }
 
     // Calculate alignment
-    num_width = (11 - position) * (FONT_WIDTH + 1) - 1;
+    num_width = (11 - position) * (FONT_WIDTH + FONT_SPACING_HOR) - 1;
     if (width > num_width)
     {
         _cursor_x += width - num_width;

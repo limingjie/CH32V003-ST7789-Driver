@@ -4,22 +4,12 @@
 #ifndef FONT5X7_H
 #define FONT5X7_H
 
-#ifdef __AVR__
-#include <avr/io.h>
-#include <avr/pgmspace.h>
-#elif defined(ESP8266)
-#include <pgmspace.h>
-#elif defined(__IMXRT1052__) || defined(__IMXRT1062__)
-// PROGMEM is defefind for T4 to place data in specific memory section
-#undef PROGMEM
-#define PROGMEM
-#else
-#define PROGMEM
-#endif
+#define FONT_WIDTH       5  // Font width
+#define FONT_HEIGHT      7  // Font height
+#define FONT_SPACING_HOR 1  // Font spacing horizontal
 
 // Standard ASCII 5x7 font
-
-static unsigned char font[] PROGMEM = {
+static unsigned char font[] = {
 		0x00, 0x00, 0x00, 0x00, 0x00,
 		0x3E, 0x5B, 0x4F, 0x5B, 0x3E,
 		0x3E, 0x6B, 0x4F, 0x6B, 0x3E,
