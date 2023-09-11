@@ -104,7 +104,8 @@ static uint16_t _bg_color                  = BLACK;  // Background color
 static uint8_t  _buffer[ST7789_WIDTH << 1] = {0};    // DMA buffer, long enough to fill a row.
 
 /// \brief Initialize SPI
-/// \details Configure SPI, DMA, and RESET/DC/CS lines.
+/// \details Configure SPI, DMA, and RESET/DC/CS lines. CPOL = 1 and CPHA = 1.
+/// \todo Add a mode parameter for CPHA and CPOL configuration.
 static void SPI_init(void)
 {
     // Enable GPIO Port C and SPI peripheral
@@ -228,23 +229,23 @@ void tft_init(void)
 {
     SPI_init();
 
-    // Reset display
-    // ____  10us  ___________
-    //     \______/
+    // Reset timing
+    // ____  TRW >= 10us  ________________
+    //     \_____________/  TRT <= 120ms
     RESET_HIGH();
     Delay_Ms(1);
     RESET_LOW();
-    Delay_Ms(1);  // > 10us
+    Delay_Ms(1);  // TRW >= 10us
     RESET_HIGH();
-    Delay_Ms(ST7789_RST_DELAY);
+    Delay_Ms(ST7789_RST_DELAY);  // TRT <= 120ms
 
     START_WRITE();
 
-    // Out of sleep mode, no args, w/delay
+    // Software Reset
     // write_command_8(ST7789_SWRESET);
     // Delay_Ms(ST7789_SWRESET_DELAY);
 
-    // Out of sleep mode, no args, w/delay
+    // Sleep out
     write_command_8(ST7789_SLPOUT);
     Delay_Ms(ST7789_SLPOUT_DELAY);
 
@@ -254,10 +255,10 @@ void tft_init(void)
 
     // Set rotation
     write_command_8(ST7789_MADCTL);
-    // write_data_8(ST7789_MADCTL_MY | ST7789_MADCTL_MV | ST7789_MADCTL_RGB);  // 0 - Horizontal
+    // write_data_8(ST7789_MADCTL_MY | ST7789_MADCTL_MV | ST7789_MADCTL_RGB);  // 0 - Horizontal - X-Y Swap & Y-Mirror
     // write_data_8(ST7789_MADCTL_RGB);                                        // 1 - Vertical
-    write_data_8(ST7789_MADCTL_MX | ST7789_MADCTL_MV | ST7789_MADCTL_RGB);  // 2 - Horizontal
-    // write_data_8(ST7789_MADCTL_MX | ST7789_MADCTL_MY | ST7789_MADCTL_RGB);  // 3 - Vertical
+    write_data_8(ST7789_MADCTL_MX | ST7789_MADCTL_MV | ST7789_MADCTL_RGB);  // 2 - Horizontal - X-Y Swap & X-Mirror
+    // write_data_8(ST7789_MADCTL_MX | ST7789_MADCTL_MY | ST7789_MADCTL_RGB);  // 3 - Vertical   - X-Mirror & Y-Mirror
 
     // write_command_8(ST7789_RAMCTRL);
     // write_data_8(0x00);  // Power on default - RAM access from MCU interface and Display operation selection from MCU
@@ -336,7 +337,7 @@ void tft_init(void)
     // Normal display on
     // write_command_8(ST7789_NORON); // Power on default
 
-    // Main screen turn on
+    // Display On
     write_command_8(ST7789_DISPON);
     END_WRITE();
 }
